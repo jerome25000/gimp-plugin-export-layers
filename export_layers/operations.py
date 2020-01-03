@@ -387,7 +387,7 @@ def _create_procedure(name, **create_operation_kwargs):
       "type": pg.SettingTypes.boolean,
       "name": "ignore_global_constraints",
       "default_value": False,
-      "display_name": _("Ignore Constraints"),
+      "display_name": _("Ignore Global Constraints"),
     },
     {
       "type": pg.SettingTypes.boolean,
