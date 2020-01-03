@@ -772,10 +772,10 @@ def _get_constraint_by_name(constraint_name, constraints):
 
 def _get_procedure_func(function, local_constraint, ignore_global_constraints):
   def _operation(image, layer, layer_exporter, *args, **kwargs):
-    new_args, new_kwargs = placeholders.get_replaced_args_and_kwargs(
-      args, kwargs, image, layer, layer_exporter)
-    
     if _matches_constraints(layer_exporter, local_constraint, ignore_global_constraints):
+      new_args, new_kwargs = placeholders.get_replaced_args_and_kwargs(
+        args, kwargs, image, layer, layer_exporter)
+      
       function(image, layer, layer_exporter, *new_args, **new_kwargs)
   
   return _operation
