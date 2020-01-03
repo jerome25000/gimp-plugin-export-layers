@@ -352,7 +352,7 @@ class OperationBox(pg.gui.ItemBox):
     dialog.destroy()
     
     if response_id == gtk.RESPONSE_OK:
-      item.operation["arguments"].apply_gui_values_to_settings()
+      self._update_operation_values(item.operation)
       item.operation["enabled"].set_value(True)
     else:
       self.remove_item(item)
@@ -392,7 +392,7 @@ class OperationBox(pg.gui.ItemBox):
     dialog.destroy()
     
     if response_id == gtk.RESPONSE_OK:
-      item.operation["arguments"].apply_gui_values_to_settings()
+      self._update_operation_values(item.operation)
     else:
       item.operation.set_values(operation_values_before_dialog)
     
@@ -402,6 +402,10 @@ class OperationBox(pg.gui.ItemBox):
         self, button_remove, item):
     if item.is_being_edited():
       item.operation_edit_dialog.response(gtk.RESPONSE_CANCEL)
+  
+  def _update_operation_values(self, operation):
+    operation["arguments"].apply_gui_values_to_settings()
+    operation["local_constraint"].gui.update_setting_value()
   
   def _get_operation_edit_dialog_title(self, item):
     if self._edit_operation_text is not None:
