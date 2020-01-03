@@ -270,8 +270,7 @@ class LayerExporter(object):
     
     For more information, see `add_procedure()`.
     """
-    return self._initial_executor.add(
-      _get_constraint_func(func), *args, **kwargs)
+    return self._initial_executor.add(_get_constraint_func(func), *args, **kwargs)
   
   def remove_operation(self, *args, **kwargs):
     """
