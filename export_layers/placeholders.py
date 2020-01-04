@@ -38,7 +38,7 @@ import gimpenums
 
 from export_layers import pygimplib as pg
 
-from .gui import placeholders as gui_placeholders
+from .gui import presenters as gui_presenters
 
 
 class _GimpObjectPlaceholder(object):
@@ -106,7 +106,7 @@ def get_replaced_args_and_kwargs(func_args, func_kwargs, image, layer, layer_exp
 
 class PlaceholderSetting(pg.setting.Setting):
    
-  _ALLOWED_GUI_TYPES = [gui_placeholders.GimpObjectPlaceholdersComboBoxPresenter]
+  _ALLOWED_GUI_TYPES = [gui_presenters.GimpObjectPlaceholdersComboBoxPresenter]
   _ALLOWED_PLACEHOLDERS = []
   
   @classmethod
