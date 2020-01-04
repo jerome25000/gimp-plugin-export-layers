@@ -382,7 +382,6 @@ def _create_procedure(name, **create_operation_kwargs):
       "type": ConstraintSetting,
       "name": "local_constraint",
       "default_value": "",
-      "default_value_display_name": _("All layers"),
     },
     {
       "type": pg.SettingTypes.boolean,

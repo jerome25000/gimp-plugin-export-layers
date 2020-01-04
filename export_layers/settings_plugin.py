@@ -193,10 +193,12 @@ def create_settings():
 def _assign_constraints_to_initially_added_procedures(procedures, constraints):
   for initial_procedure in operations.walk(procedures):
     initial_procedure["local_constraint"].constraints = constraints
+    initial_procedure["local_constraint"].default_value_display_name = _("All layers")
 
 
 def _on_after_add_procedure(procedures, procedure, orig_procedure_dict, constraints):
   procedure["local_constraint"].constraints = constraints
+  procedure["local_constraint"].default_value_display_name = _("All layers")
 
 
 def _on_after_add_file_extension_procedure(
