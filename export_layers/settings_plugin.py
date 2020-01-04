@@ -156,7 +156,8 @@ def create_settings():
   
   settings["main"].add([operations.create(
     name="procedures",
-    initial_operations=[builtin_procedures.BUILTIN_PROCEDURES["use_layer_size"]]),
+    initial_operations=[
+      builtin_procedures.BUILTIN_PROCEDURES["use_layer_size"]]),
   ])
   
   settings["main"].add([operations.create(
@@ -166,26 +167,46 @@ def create_settings():
       builtin_constraints.BUILTIN_CONSTRAINTS["only_visible_layers"]]),
   ])
   
+  _assign_constraints_to_initially_added_procedures(
+    settings["main/procedures"],
+    settings["main/constraints"])
+  
   settings["main/procedures"].connect_event(
-    "after-add-operation", _on_after_add_procedure, settings["main/file_extension"])
+    "after-add-operation",
+    _on_after_add_procedure,
+    settings["main/constraints"])
+  
+  settings["main/procedures"].connect_event(
+    "after-add-operation",
+    _on_after_add_file_extension_procedure,
+    settings["main/file_extension"])
   
   settings["main/constraints"].connect_event(
     "after-add-operation",
-    _on_after_add_constraint,
+    _on_after_add_only_selected_layers_constraint,
     settings["main/selected_layers"],
     settings["special/image"])
   
   return settings
 
 
-def _on_after_add_procedure(
+def _assign_constraints_to_initially_added_procedures(procedures, constraints):
+  for initial_procedure in operations.walk(procedures):
+    initial_procedure["local_constraint"].constraints = constraints
+
+
+def _on_after_add_procedure(procedures, procedure, orig_procedure_dict, constraints):
+  procedure["local_constraint"].constraints = constraints
+
+
+def _on_after_add_file_extension_procedure(
       procedures, procedure, orig_procedure_dict, file_extension_setting):
   if orig_procedure_dict["name"] == "use_file_extensions_in_layer_names":
     _adjust_error_message_for_use_file_extensions_in_layer_names(
       procedure, file_extension_setting)
 
 
-def _on_after_add_constraint(
+def _on_after_add_only_selected_layers_constraint(
       constraints,
       constraint,
       orig_constraint_dict,

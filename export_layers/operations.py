@@ -379,9 +379,10 @@ def _create_procedure(name, **create_operation_kwargs):
   
   procedure.add([
     {
-      "type": pg.SettingTypes.string,
+      "type": ConstraintSetting,
       "name": "local_constraint",
       "default_value": "",
+      "default_value_display_name": _("All layers"),
     },
     {
       "type": pg.SettingTypes.boolean,
@@ -748,6 +749,61 @@ def walk(operations, operation_type=None, setting_name=None):
       else:
         if setting_name in operation:
           yield operation[setting_name]
+
+
+class ConstraintSetting(pg.setting.StringSetting):
+  """
+  This setting class allows:
+  * storing a constraint name, restricted to the specified group of constraints,
+  * allows retrieving a constraint given the stored constraint name.
+  
+  Additional attributes:
+  
+  * `constraints` - An instance containing constraints, created via `create()`.
+  
+  * `default_value_display_name` - The display name for the default value,
+    representing no selected constraint.
+  """
+  
+  def __init__(self, *args, **kwargs):
+    self.constraints = kwargs.pop("constraints", None)
+    self.default_value_display_name = kwargs.pop("default_value_display_name", "")
+    
+    self._names_and_constraints = {}
+    
+    super().__init__(*args, **kwargs)
+  
+  def set_value(self, value):
+    names_and_constraints = self._get_names_and_constraints()
+    
+    if names_and_constraints is not None and value not in names_and_constraints:
+        value = self._default_value
+    
+    super().set_value(value)
+  
+  def get_constraint(self):
+    """
+    Return the constraint (`pygimplib.setting.Group` instance) given the name
+    stored in the current setting value. If the constraint name is not found,
+    return `None`.
+    
+    Note that `value` itself may hold any string and thus might not correspond
+    to any of the existing constraints.
+    """
+    if self.constraints is not None:
+      try:
+        return self._get_names_and_constraints()[self.value]
+      except KeyError:
+        return None
+    else:
+      return None
+  
+  def _get_names_and_constraints(self):
+    if self.constraints is not None:
+      return {
+        constraint.name: constraint for constraint in walk(self.constraints)}
+    else:
+      return None
 
 
 class UnsupportedPdbProcedureError(Exception):

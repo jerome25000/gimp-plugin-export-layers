@@ -853,3 +853,40 @@ class TestGetOperationDictAsPdbProcedure(unittest.TestCase):
       operation_dict["arguments"][-2]["type"], placeholders.PlaceholderImageSetting)
     self.assertEqual(
       operation_dict["arguments"][-1]["type"], placeholders.PlaceholderLayerSetting)
+
+
+class ConstraintSettingTest(unittest.TestCase):
+  
+  def test_create_setting_without_constraints(self):
+    setting = operations.ConstraintSetting("test_constraint", default_value="")
+    
+    self.assertEqual(setting.value, "")
+    self.assertIsNone(setting.get_constraint())
+  
+  def test_create_setting_with_constraints(self):
+    constraints = operations.create("constraints", test_constraints)
+    setting = operations.ConstraintSetting("test_constraint", constraints=constraints)
+    
+    self.assertEqual(setting.value, "")
+    self.assertEqual(setting.constraints, constraints)
+    self.assertIsNone(setting.get_constraint())
+  
+  def test_set_value(self):
+    constraints = operations.create("constraints", test_constraints)
+    setting = operations.ConstraintSetting("test_constraint", constraints=constraints)
+    
+    setting.set_value("only_visible_layers")
+    
+    self.assertEqual(setting.value, "only_visible_layers")
+    self.assertEqual(setting.get_constraint(), constraints["added/only_visible_layers"])
+  
+  def test_setting_value_remains_if_constraint_is_removed_from_constraints(self):
+    constraints = operations.create("constraints", test_constraints)
+    setting = operations.ConstraintSetting("test_constraint", constraints=constraints)
+    
+    setting.set_value("only_visible_layers")
+    
+    operations.remove(constraints, "only_visible_layers")
+    
+    self.assertEqual(setting.value, "only_visible_layers")
+    self.assertEqual(setting.get_constraint(), None)

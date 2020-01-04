@@ -382,11 +382,7 @@ class LayerExporter(object):
       self._initial_executor.list_groups(include_empty_groups=True))
     
     for procedure in operations.walk(self.export_settings["procedures"]):
-      add_operation_from_settings(
-        procedure,
-        self._executor,
-        {constraint.name: constraint
-         for constraint in operations.walk(self.export_settings["constraints"])})
+      add_operation_from_settings(procedure, self._executor)
     
     for constraint in operations.walk(self.export_settings["constraints"]):
       add_operation_from_settings(constraint, self._executor)
@@ -707,7 +703,7 @@ class LayerExporter(object):
 _LAYER_EXPORTER_ARG_POSITION_IN_CONSTRAINTS = 1
 
 
-def add_operation_from_settings(operation, executor, constraints=None):
+def add_operation_from_settings(operation, executor):
   if operation.get_value("is_pdb_procedure", False):
     try:
       function = pdb[operation["function"].value.encode(pg.GIMP_CHARACTER_ENCODING)]
@@ -733,7 +729,7 @@ def add_operation_from_settings(operation, executor, constraints=None):
   if "procedure" in operation.tags:
     function = _get_procedure_func(
       function,
-      _get_constraint_by_name(operation["local_constraint"].value, constraints),
+      operation["local_constraint"].get_constraint(),
       operation["ignore_global_constraints"].value)
   
   if "constraint" in operation.tags:
@@ -758,16 +754,6 @@ def _get_operation_func_for_pdb_procedure(pdb_procedure):
     pdb_procedure(*args, **kwargs)
   
   return _pdb_procedure_as_operation
-
-
-def _get_constraint_by_name(constraint_name, constraints):
-  if constraints is None:
-    return None
-  
-  try:
-    return constraints[constraint_name]
-  except KeyError:
-    return None
 
 
 def _get_procedure_func(function, local_constraint, ignore_global_constraints):
