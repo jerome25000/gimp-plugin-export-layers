@@ -768,18 +768,25 @@ class ConstraintSetting(pg.setting.StringSetting):
   
   _ALLOWED_GUI_TYPES = [gui_presenters.ConstraintComboBoxPresenter]
   
+  _constraints_set = set()
+  
   def __init__(self, *args, **kwargs):
-    self.constraints = kwargs.pop("constraints", None)
     self.default_value_display_name = kwargs.pop("default_value_display_name", "")
+    
+    self._constraints = kwargs.pop("constraints", None)
     
     self._names_and_constraints = {}
     
     super().__init__(*args, **kwargs)
   
   @property
+  def constraints(self):
+    return self._constraints
+  
+  @property
   def constraints_iter(self):
-    if self.constraints is not None:
-      return (constraint for constraint in walk(self.constraints))
+    if self._constraints is not None:
+      return (constraint for constraint in walk(self._constraints))
     else:
       return []
   
@@ -800,7 +807,7 @@ class ConstraintSetting(pg.setting.StringSetting):
     Note that `value` itself may hold any string and thus might not correspond
     to any of the existing constraints.
     """
-    if self.constraints is not None:
+    if self._constraints is not None:
       try:
         return self._get_names_and_constraints()[self.value]
       except KeyError:
@@ -808,10 +815,20 @@ class ConstraintSetting(pg.setting.StringSetting):
     else:
       return None
   
+  def set_constraints(self, constraints):
+    """
+    Set a new `pygimplib.setting.Group` instance as constraints for this
+    setting.
+    """
+    if constraints not in self._constraints_set:
+      self._constraints_set.add(constraints)
+      
+    self._constraints = constraints
+  
   def _get_names_and_constraints(self):
-    if self.constraints is not None:
+    if self._constraints is not None:
       return {
-        constraint.name: constraint for constraint in walk(self.constraints)}
+        constraint.name: constraint for constraint in walk(self._constraints)}
     else:
       return None
 
