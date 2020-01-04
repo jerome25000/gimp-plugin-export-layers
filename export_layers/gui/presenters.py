@@ -18,12 +18,17 @@
 # along with Export Layers.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-This module defines GUI for placeholder GIMP objects (images, layers). During
-processing, these placeholders are replaced with real objects.
+This module defines GUI for custom `pg.setting.Setting` classes defined in the
+plug-in.
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 from future.builtins import *
+
+import pygtk
+pygtk.require("2.0")
+import gtk
+import gobject
 
 import gimpui
 
@@ -54,3 +59,75 @@ class GimpObjectPlaceholdersComboBoxPresenter(pg.setting.GtkPresenter):
   
   def _set_value(self, value):
     self._element.set_active(self._setting.get_allowed_placeholder_names().index(value))
+
+
+class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
+  """
+  This class is a `setting.presenter.Presenter` subclass for `gtk.ComboBox`
+  elements used for `operations.ConstraintSetting` instances.
+  
+  Value: Constraint name as string selected in the combo box.
+  """
+  
+  _VALUE_CHANGED_SIGNAL = "changed"
+  
+  _COLUMNS = (_COLUMN_CONSTRAINT, _COLUMN_DISPLAY_NAME) = (
+    [0, gobject.TYPE_PYOBJECT], [1, gobject.TYPE_STRING])
+  
+  _DEFAULT_VALUE_INDEX = 0
+  
+  def _create_gui_element(self, setting):
+    self._list_store = None
+    
+    combo_box = gtk.ComboBox()
+    cell_renderer = gtk.CellRendererText()
+    
+    combo_box.pack_start(cell_renderer, expand=True)
+    combo_box.add_attribute(cell_renderer, "text", self._COLUMN_DISPLAY_NAME[0])
+    
+    self._set_constraints(self._setting.constraints, combo_box)
+    
+    return combo_box
+  
+  def _get_value(self):
+    index = self._element.get_active()
+    
+    if index == -1:
+      return self._setting.default_value
+    
+    constraint = self._list_store[index][self._COLUMN_CONSTRAINT[0]]
+    
+    if constraint is not None:
+      return constraint.name
+    else:
+      return self._setting.default_value
+  
+  def _set_value(self, value):
+    constraint_index = self._DEFAULT_VALUE_INDEX
+    
+    for index, row in enumerate(self._list_store):
+      constraint = row[self._COLUMN_CONSTRAINT[0]]
+      if constraint is not None and constraint.name == value:
+        constraint_index = index
+        break
+    
+    self._element.set_active(constraint_index)
+  
+  def _set_constraints(self, constraints, element):
+    self._list_store = self._create_combo_box_model()
+    element.set_model(self._list_store)
+  
+  def _create_combo_box_model(self):
+    list_store = gtk.ListStore(*[column[1] for column in self._COLUMNS])
+    
+    list_store.append(self._get_default_row())
+    for constraint in self._setting.constraints_iter:
+      list_store.append(self._get_row(constraint))
+    
+    return list_store
+  
+  def _get_row(self, constraint):
+    return [constraint, constraint["display_name"].value]
+  
+  def _get_default_row(self):
+    return [None, self._setting.default_value_display_name]

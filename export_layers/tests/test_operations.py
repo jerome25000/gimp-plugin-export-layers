@@ -855,15 +855,18 @@ class TestGetOperationDictAsPdbProcedure(unittest.TestCase):
       operation_dict["arguments"][-1]["type"], placeholders.PlaceholderLayerSetting)
 
 
+@mock.patch(
+  "export_layers.operations.ConstraintSetting.gui",
+  new_callable=mock.PropertyMock)
 class ConstraintSettingTest(unittest.TestCase):
   
-  def test_create_setting_without_constraints(self):
+  def test_create_setting_without_constraints(self, mock_gui):
     setting = operations.ConstraintSetting("test_constraint", default_value="")
     
     self.assertEqual(setting.value, "")
     self.assertIsNone(setting.get_constraint())
   
-  def test_create_setting_with_constraints(self):
+  def test_create_setting_with_constraints(self, mock_gui):
     constraints = operations.create("constraints", test_constraints)
     setting = operations.ConstraintSetting("test_constraint", constraints=constraints)
     
@@ -871,7 +874,7 @@ class ConstraintSettingTest(unittest.TestCase):
     self.assertEqual(setting.constraints, constraints)
     self.assertIsNone(setting.get_constraint())
   
-  def test_set_value(self):
+  def test_set_value(self, mock_gui):
     constraints = operations.create("constraints", test_constraints)
     setting = operations.ConstraintSetting("test_constraint", constraints=constraints)
     
@@ -880,7 +883,7 @@ class ConstraintSettingTest(unittest.TestCase):
     self.assertEqual(setting.value, "only_visible_layers")
     self.assertEqual(setting.get_constraint(), constraints["added/only_visible_layers"])
   
-  def test_setting_value_remains_if_constraint_is_removed_from_constraints(self):
+  def test_setting_value_remains_if_constraint_is_removed_from_constraints(self, mock_gui):
     constraints = operations.create("constraints", test_constraints)
     setting = operations.ConstraintSetting("test_constraint", constraints=constraints)
     

@@ -81,6 +81,8 @@ from export_layers import pygimplib as pg
 
 from . import placeholders
 
+from .gui import presenters as gui_presenters
+
 
 BUILTIN_TAGS = {
   "background": _("Background"),
@@ -764,6 +766,8 @@ class ConstraintSetting(pg.setting.StringSetting):
     representing no selected constraint.
   """
   
+  _ALLOWED_GUI_TYPES = [gui_presenters.ConstraintComboBoxPresenter]
+  
   def __init__(self, *args, **kwargs):
     self.constraints = kwargs.pop("constraints", None)
     self.default_value_display_name = kwargs.pop("default_value_display_name", "")
@@ -771,6 +775,13 @@ class ConstraintSetting(pg.setting.StringSetting):
     self._names_and_constraints = {}
     
     super().__init__(*args, **kwargs)
+  
+  @property
+  def constraints_iter(self):
+    if self.constraints is not None:
+      return (constraint for constraint in walk(self.constraints))
+    else:
+      return []
   
   def set_value(self, value):
     names_and_constraints = self._get_names_and_constraints()
