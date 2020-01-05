@@ -775,9 +775,10 @@ class ConstraintSetting(pg.setting.StringSetting):
     
     self._constraints = kwargs.pop("constraints", None)
     
-    self._names_and_constraints = {}
-    
     super().__init__(*args, **kwargs)
+    
+    if self._constraints is not None:
+      self.set_constraints(self._constraints)
   
   @property
   def constraints(self):
@@ -791,12 +792,12 @@ class ConstraintSetting(pg.setting.StringSetting):
       return []
   
   def set_value(self, value):
-    names_and_constraints = self._get_names_and_constraints()
+    constraint = self._get_constraint_by_name(value)
     
-    if names_and_constraints is not None and value not in names_and_constraints:
-        value = self._default_value
-    
-    super().set_value(value)
+    if constraint is not None:
+      super().set_value(constraint.name)
+    else:
+      super().set_value(self._default_value)
   
   def get_constraint(self):
     """
@@ -807,30 +808,76 @@ class ConstraintSetting(pg.setting.StringSetting):
     Note that `value` itself may hold any string and thus might not correspond
     to any of the existing constraints.
     """
-    if self._constraints is not None:
-      try:
-        return self._get_names_and_constraints()[self.value]
-      except KeyError:
-        return None
-    else:
-      return None
+    return self._get_constraint_by_name(self.value)
   
   def set_constraints(self, constraints):
     """
     Set a new `pygimplib.setting.Group` instance as constraints for this
     setting.
+    
+    The setting value is reset as the selected constraint might not appear in
+    the new instance of constraints.
     """
+    self._constraints = constraints
+    
     if constraints not in self._constraints_set:
       self._constraints_set.add(constraints)
-      
-    self._constraints = constraints
+      self._connect_events_to_keep_gui_updated(constraints)
+    
+    try:
+      self.gui.set_constraints(constraints)
+    except AttributeError:
+      pass
+    
+    self.reset()
   
-  def _get_names_and_constraints(self):
-    if self._constraints is not None:
-      return {
-        constraint.name: constraint for constraint in walk(self._constraints)}
+  def _get_constraint_by_name(self, constraint_name):
+    if self._constraints:
+      return next(
+        (constraint for constraint in walk(self._constraints)
+         if constraint.name == constraint_name),
+        None)
     else:
       return None
+  
+  def _connect_events_to_keep_gui_updated(self, constraints):
+    constraints.connect_event("after-add-operation", self._add_constraint_in_gui)
+    constraints.connect_event("after-reorder-operation", self._reorder_constraint_in_gui)
+    constraints.connect_event("before-remove-operation", self._remove_constraint_in_gui)
+    constraints.connect_event("after-clear-operations", self._clear_constraints_in_gui)
+    constraints.connect_event("after-set-gui", self._set_constraints_in_gui, constraints)
+  
+  def _add_constraint_in_gui(self, constraints, constraint, constraint_dict):
+    try:
+      self.gui.add_constraint(constraints, constraint)
+    except AttributeError:
+      pass
+  
+  def _reorder_constraint_in_gui(
+        self, constraints, constraint, previous_position, new_position):
+    try:
+      self.gui.reorder_constraint(
+        constraints, constraint, previous_position, new_position)
+    except AttributeError:
+      pass
+  
+  def _remove_constraint_in_gui(self, constraints, constraint):
+    try:
+      self.gui.remove_constraint(constraints, constraint)
+    except AttributeError:
+      pass
+  
+  def _set_constraints_in_gui(self, setting, constraints):
+    try:
+      self.gui.set_constraints(constraints)
+    except AttributeError:
+      pass
+  
+  def _clear_constraints_in_gui(self, constraints):
+    try:
+      self.gui.clear_constraints(constraints)
+    except AttributeError:
+      pass
 
 
 class UnsupportedPdbProcedureError(Exception):

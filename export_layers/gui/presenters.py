@@ -76,6 +76,51 @@ class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
   
   _DEFAULT_VALUE_INDEX = 0
   
+  _constraints_and_models = {}
+  
+  def add_constraint(self, constraints, constraint):
+    self._constraints_and_models[constraints].append(self._get_row(constraint))
+  
+  def reorder_constraint(self, constraints, constraint, previous_position, new_position):
+    if previous_position >= self._DEFAULT_VALUE_INDEX:
+      previous_position += 1
+    
+    if new_position >= self._DEFAULT_VALUE_INDEX:
+      new_position += 1
+    
+    model = self._constraints_and_models[constraints]
+    
+    if new_position >= previous_position:
+      model.move_after(model[previous_position].iter, model[new_position].iter)
+    else:
+      model.move_before(model[previous_position].iter, model[new_position].iter)
+  
+  def remove_constraint(self, constraints, constraint):
+    model = self._constraints_and_models[constraints]
+    
+    constraint_position = next(
+      (i for i, row in enumerate(model)
+       if row[self._COLUMN_CONSTRAINT[0]] == constraint),
+      None)
+    
+    if constraint_position is not None:
+      del model[constraint_position]
+  
+  def clear_constraints(self, constraints):
+    self._constraints_and_models[constraints].clear()
+    self._fill_combo_box_model(self._constraints_and_models[constraints])
+  
+  def set_constraints(self, constraints, element=None):
+    if constraints not in self._constraints_and_models:
+      self._constraints_and_models[constraints] = self._create_combo_box_model()
+    
+    self._list_store = self._constraints_and_models[constraints]
+    
+    if element is None:
+      element = self._element
+    
+    element.set_model(self._list_store)
+  
   def _create_gui_element(self, setting):
     self._list_store = None
     
@@ -85,7 +130,7 @@ class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
     combo_box.pack_start(cell_renderer, expand=True)
     combo_box.add_attribute(cell_renderer, "text", self._COLUMN_DISPLAY_NAME[0])
     
-    self._set_constraints(self._setting.constraints, combo_box)
+    self.set_constraints(self._setting.constraints, combo_box)
     
     return combo_box
   
@@ -113,18 +158,15 @@ class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
     
     self._element.set_active(constraint_index)
   
-  def _set_constraints(self, constraints, element):
-    self._list_store = self._create_combo_box_model()
-    element.set_model(self._list_store)
-  
   def _create_combo_box_model(self):
     list_store = gtk.ListStore(*[column[1] for column in self._COLUMNS])
-    
+    self._fill_combo_box_model(list_store)
+    return list_store
+  
+  def _fill_combo_box_model(self, list_store):
     list_store.append(self._get_default_row())
     for constraint in self._setting.constraints_iter:
       list_store.append(self._get_row(constraint))
-    
-    return list_store
   
   def _get_row(self, constraint):
     return [constraint, constraint["display_name"].value]
