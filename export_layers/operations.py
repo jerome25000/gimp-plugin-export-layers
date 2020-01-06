@@ -774,6 +774,7 @@ class ConstraintSetting(pg.setting.StringSetting):
     self.default_value_display_name = kwargs.pop("default_value_display_name", "")
     
     self._constraints = kwargs.pop("constraints", None)
+    self._constraint_names = set()
     
     super().__init__(*args, **kwargs)
     
@@ -822,6 +823,7 @@ class ConstraintSetting(pg.setting.StringSetting):
     
     if constraints not in self._constraints_set:
       self._constraints_set.add(constraints)
+      self._constraint_names = self._get_constraint_names(constraints)
       self._connect_events_to_keep_gui_updated(constraints)
     
     try:
@@ -848,10 +850,13 @@ class ConstraintSetting(pg.setting.StringSetting):
     constraints.connect_event("after-set-gui", self._set_constraints_in_gui, constraints)
   
   def _add_constraint_in_gui(self, constraints, constraint, constraint_dict):
-    try:
-      self.gui.add_constraint(constraints, constraint)
-    except AttributeError:
-      pass
+    if constraint.name not in self._constraint_names:
+      self._constraint_names.add(constraint.name)
+      
+      try:
+        self.gui.add_constraint(constraints, constraint)
+      except AttributeError:
+        pass
   
   def _reorder_constraint_in_gui(
         self, constraints, constraint, previous_position, new_position):
@@ -862,6 +867,11 @@ class ConstraintSetting(pg.setting.StringSetting):
       pass
   
   def _remove_constraint_in_gui(self, constraints, constraint):
+    self._constraint_names.remove(constraint.name)
+    
+    if constraint.name == self.value:
+      self.reset()
+    
     try:
       self.gui.remove_constraint(constraints, constraint)
     except AttributeError:
@@ -874,10 +884,15 @@ class ConstraintSetting(pg.setting.StringSetting):
       pass
   
   def _clear_constraints_in_gui(self, constraints):
+    self._constraint_names = self._get_constraint_names(constraints)
+    
     try:
       self.gui.clear_constraints(constraints)
     except AttributeError:
       pass
+  
+  def _get_constraint_names(self, constraints):
+    return set(constraint.name for constraint in walk(constraints))
 
 
 class UnsupportedPdbProcedureError(Exception):

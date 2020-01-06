@@ -71,8 +71,8 @@ class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
   
   _VALUE_CHANGED_SIGNAL = "changed"
   
-  _COLUMNS = (_COLUMN_CONSTRAINT, _COLUMN_DISPLAY_NAME) = (
-    [0, gobject.TYPE_PYOBJECT], [1, gobject.TYPE_STRING])
+  _COLUMNS = (_COLUMN_CONSTRAINT_NAME, _COLUMN_DISPLAY_NAME) = (
+    [0, gobject.TYPE_STRING], [1, gobject.TYPE_STRING])
   
   _DEFAULT_VALUE_INDEX = 0
   
@@ -100,7 +100,7 @@ class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
     
     constraint_position = next(
       (i for i, row in enumerate(model)
-       if row[self._COLUMN_CONSTRAINT[0]] == constraint),
+       if row[self._COLUMN_CONSTRAINT_NAME[0]] == constraint.name),
       None)
     
     if constraint_position is not None:
@@ -137,24 +137,16 @@ class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
   def _get_value(self):
     index = self._element.get_active()
     
-    if index == -1:
-      return self._setting.default_value
-    
-    constraint = self._list_store[index][self._COLUMN_CONSTRAINT[0]]
-    
-    if constraint is not None:
-      return constraint.name
+    if index != -1:
+      return self._list_store[index][self._COLUMN_CONSTRAINT_NAME[0]]
     else:
       return self._setting.default_value
   
   def _set_value(self, value):
-    constraint_index = self._DEFAULT_VALUE_INDEX
-    
-    for index, row in enumerate(self._list_store):
-      constraint = row[self._COLUMN_CONSTRAINT[0]]
-      if constraint is not None and constraint.name == value:
-        constraint_index = index
-        break
+    constraint_index = next(
+      (index for index, row in enumerate(self._list_store)
+       if row[self._COLUMN_CONSTRAINT_NAME[0]] == value),
+      self._DEFAULT_VALUE_INDEX)
     
     self._element.set_active(constraint_index)
   
@@ -169,7 +161,7 @@ class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
       list_store.append(self._get_row(constraint))
   
   def _get_row(self, constraint):
-    return [constraint, constraint["display_name"].value]
+    return [constraint.name, constraint["display_name"].value]
   
   def _get_default_row(self):
-    return [None, self._setting.default_value_display_name]
+    return [self._setting.default_value, self._setting.default_value_display_name]

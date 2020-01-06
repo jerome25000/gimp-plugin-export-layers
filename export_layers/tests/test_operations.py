@@ -860,6 +860,10 @@ class TestGetOperationDictAsPdbProcedure(unittest.TestCase):
   new_callable=mock.PropertyMock)
 class ConstraintSettingTest(unittest.TestCase):
   
+  def setUp(self):
+    self.constraints = operations.create("constraints", test_constraints)
+    self.setting = operations.ConstraintSetting("test_constraint", constraints=self.constraints)
+  
   def test_create_setting_without_constraints(self, mock_gui):
     setting = operations.ConstraintSetting("test_constraint", default_value="")
     
@@ -867,29 +871,43 @@ class ConstraintSettingTest(unittest.TestCase):
     self.assertIsNone(setting.get_constraint())
   
   def test_create_setting_with_constraints(self, mock_gui):
-    constraints = operations.create("constraints", test_constraints)
-    setting = operations.ConstraintSetting("test_constraint", constraints=constraints)
-    
-    self.assertEqual(setting.value, "")
-    self.assertEqual(setting.constraints, constraints)
-    self.assertIsNone(setting.get_constraint())
+    self.assertEqual(self.setting.value, "")
+    self.assertEqual(self.setting.constraints, self.constraints)
+    self.assertIsNone(self.setting.get_constraint())
   
   def test_set_value(self, mock_gui):
-    constraints = operations.create("constraints", test_constraints)
-    setting = operations.ConstraintSetting("test_constraint", constraints=constraints)
+    self.setting.set_value("only_visible_layers")
     
-    setting.set_value("only_visible_layers")
-    
-    self.assertEqual(setting.value, "only_visible_layers")
-    self.assertEqual(setting.get_constraint(), constraints["added/only_visible_layers"])
+    self.assertEqual(self.setting.value, "only_visible_layers")
+    self.assertEqual(self.setting.get_constraint(), self.constraints["added/only_visible_layers"])
   
-  def test_setting_value_remains_if_constraint_is_removed_from_constraints(self, mock_gui):
-    constraints = operations.create("constraints", test_constraints)
-    setting = operations.ConstraintSetting("test_constraint", constraints=constraints)
+  def test_set_value_to_non_existent_constraint_sets_to_default_value(self, mock_gui):
+    self.setting.set_value("invalid_constraint")
     
-    setting.set_value("only_visible_layers")
+    self.assertEqual(self.setting.value, self.setting.default_value)
+  
+  def test_adding_constraint_with_same_name_does_not_update_gui(self, mock_gui):
+    operations.add(self.constraints, test_constraints[1])
     
-    operations.remove(constraints, "only_visible_layers")
+    mock_gui.add_constraint.assert_called_once()
+  
+  def test_setting_value_is_reset_if_constraint_is_removed_from_constraints(self, mock_gui):
+    self.setting.set_value("only_visible_layers")
     
-    self.assertEqual(setting.value, "only_visible_layers")
-    self.assertEqual(setting.get_constraint(), None)
+    operations.remove(self.constraints, "only_visible_layers")
+    
+    self.assertEqual(self.setting.value, self.setting.default_value)
+    self.assertEqual(self.setting.get_constraint(), None)
+  
+  def test_set_constraints_resets_setting_value(self, mock_gui):
+    self.setting.set_value("only_visible_layers")
+    self.setting.set_constraints(self.constraints)
+    
+    self.assertEqual(self.setting.value, self.setting.default_value)
+  
+  def test_clear_properly_updates_gui(self, mock_gui):
+    operations.clear(self.constraints)
+    
+    mock_gui.clear_constraints.assert_called_once()
+    self.assertEqual(mock_gui.add_constraint.call_count, 0)
+    self.assertEqual(mock_gui.remove_constraint.call_count, 0)
