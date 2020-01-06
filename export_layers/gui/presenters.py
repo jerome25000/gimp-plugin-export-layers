@@ -69,8 +69,6 @@ class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
   Value: Constraint name as string selected in the combo box.
   """
   
-  _VALUE_CHANGED_SIGNAL = "changed"
-  
   _COLUMNS = (_COLUMN_CONSTRAINT_NAME, _COLUMN_DISPLAY_NAME) = (
     [0, gobject.TYPE_STRING], [1, gobject.TYPE_STRING])
   
