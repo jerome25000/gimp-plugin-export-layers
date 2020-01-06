@@ -234,8 +234,10 @@ def _get_initial_added_data(initial_operations):
 
 
 def _clear_operations_before_load_without_adding_initial_operations(
-      added_data_setting, operations_group):
-  _clear(operations_group)
+      added_data_setting, operations):
+  _clear(operations)
+  
+  operations.invoke_event("after-clear-before-load")
 
 
 def _create_operations_from_added_data(operations):
@@ -833,23 +835,15 @@ class ConstraintSetting(pg.setting.StringSetting):
     
     self.reset()
   
-  def _get_constraint_by_name(self, constraint_name):
-    if self._constraints:
-      return next(
-        (constraint for constraint in walk(self._constraints)
-         if constraint.name == constraint_name),
-        None)
-    else:
-      return None
-  
   def _connect_events_to_keep_gui_updated(self, constraints):
-    constraints.connect_event("after-add-operation", self._add_constraint_in_gui)
-    constraints.connect_event("after-reorder-operation", self._reorder_constraint_in_gui)
-    constraints.connect_event("before-remove-operation", self._remove_constraint_in_gui)
-    constraints.connect_event("after-clear-operations", self._clear_constraints_in_gui)
-    constraints.connect_event("after-set-gui", self._set_constraints_in_gui, constraints)
+    constraints.connect_event("after-add-operation", self._after_add_constraint)
+    constraints.connect_event("after-reorder-operation", self._after_reorder_constraint)
+    constraints.connect_event("before-remove-operation", self._after_remove_constraint)
+    constraints.connect_event("after-clear-operations", self._after_clear_constraints)
+    constraints.connect_event("after-clear-before-load", self._after_clear_constraints)
+    constraints.connect_event("after-set-gui", self._after_set_gui, constraints)
   
-  def _add_constraint_in_gui(self, constraints, constraint, constraint_dict):
+  def _after_add_constraint(self, constraints, constraint, constraint_dict):
     if constraint.name not in self._constraint_names:
       self._constraint_names.add(constraint.name)
       
@@ -858,7 +852,7 @@ class ConstraintSetting(pg.setting.StringSetting):
       except AttributeError:
         pass
   
-  def _reorder_constraint_in_gui(
+  def _after_reorder_constraint(
         self, constraints, constraint, previous_position, new_position):
     try:
       self.gui.reorder_constraint(
@@ -866,30 +860,39 @@ class ConstraintSetting(pg.setting.StringSetting):
     except AttributeError:
       pass
   
-  def _remove_constraint_in_gui(self, constraints, constraint):
+  def _after_remove_constraint(self, constraints, constraint):
     self._constraint_names.remove(constraint.name)
-    
-    if constraint.name == self.value:
-      self.reset()
     
     try:
       self.gui.remove_constraint(constraints, constraint)
     except AttributeError:
       pass
+    
+    if constraint.name == self.value:
+      self.reset()
   
-  def _set_constraints_in_gui(self, setting, constraints):
+  def _after_set_gui(self, setting, constraints):
     try:
       self.gui.set_constraints(constraints)
     except AttributeError:
       pass
   
-  def _clear_constraints_in_gui(self, constraints):
+  def _after_clear_constraints(self, constraints):
     self._constraint_names = self._get_constraint_names(constraints)
     
     try:
       self.gui.clear_constraints(constraints)
     except AttributeError:
       pass
+  
+  def _get_constraint_by_name(self, constraint_name):
+    if self._constraints:
+      return next(
+        (constraint for constraint in walk(self._constraints)
+         if constraint.name == constraint_name),
+        None)
+    else:
+      return None
   
   def _get_constraint_names(self, constraints):
     return set(constraint.name for constraint in walk(constraints))

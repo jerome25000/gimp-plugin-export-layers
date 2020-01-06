@@ -114,15 +114,15 @@ class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
     if constraints not in self._constraints_and_models:
       self._constraints_and_models[constraints] = self._create_combo_box_model()
     
-    self._list_store = self._constraints_and_models[constraints]
+    self._model = self._constraints_and_models[constraints]
     
     if element is None:
       element = self._element
     
-    element.set_model(self._list_store)
+    element.set_model(self._model)
   
   def _create_gui_element(self, setting):
-    self._list_store = None
+    self._model = None
     
     combo_box = gtk.ComboBox()
     cell_renderer = gtk.CellRendererText()
@@ -138,13 +138,13 @@ class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
     index = self._element.get_active()
     
     if index != -1:
-      return self._list_store[index][self._COLUMN_CONSTRAINT_NAME[0]]
+      return self._model[index][self._COLUMN_CONSTRAINT_NAME[0]]
     else:
       return self._setting.default_value
   
   def _set_value(self, value):
     constraint_index = next(
-      (index for index, row in enumerate(self._list_store)
+      (index for index, row in enumerate(self._model)
        if row[self._COLUMN_CONSTRAINT_NAME[0]] == value),
       self._DEFAULT_VALUE_INDEX)
     
@@ -155,10 +155,10 @@ class ConstraintComboBoxPresenter(pg.setting.GtkPresenter):
     self._fill_combo_box_model(list_store)
     return list_store
   
-  def _fill_combo_box_model(self, list_store):
-    list_store.append(self._get_default_row())
+  def _fill_combo_box_model(self, model):
+    model.append(self._get_default_row())
     for constraint in self._setting.constraints_iter:
-      list_store.append(self._get_row(constraint))
+      model.append(self._get_row(constraint))
   
   def _get_row(self, constraint):
     return [constraint.name, constraint["display_name"].value]
