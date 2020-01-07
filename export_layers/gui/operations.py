@@ -519,7 +519,7 @@ class _OperationEditDialog(gimpui.Dialog):
   
   def _set_more_options(self, operation):
     if "procedure" in operation.tags:
-      self._label_apply_to = gtk.Label(_("Apply to:"))
+      self._label_apply_to = gtk.Label(_("Restrict to:"))
       
       self._hbox_apply_to = gtk.HBox()
       self._hbox_apply_to.set_spacing(self._HBOX_APPLY_TO_SPACING)
