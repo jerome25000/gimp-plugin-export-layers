@@ -733,7 +733,7 @@ def add_operation_from_settings(operation, executor, constraints=None):
   if "procedure" in operation.tags:
     function = _get_procedure_func(
       function,
-      _get_constraint_by_name(operation["local_constraint"].value, constraints),
+      _get_constraint_by_name(operation["local_constraints"].value, constraints),
       operation["ignore_global_constraints"].value)
   
   if "constraint" in operation.tags:

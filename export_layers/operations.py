@@ -379,8 +379,15 @@ def _create_procedure(name, **create_operation_kwargs):
   
   procedure.add([
     {
+      "type": pg.SettingTypes.boolean,
+      "name": "more_options_visible",
+      "default_value": False,
+      "display_name": _("_More Options"),
+      "gui_type": pg.SettingGuiTypes.expander,
+    },
+    {
       "type": pg.SettingTypes.string,
-      "name": "local_constraint",
+      "name": "local_constraints",
       "default_value": "",
     },
     {
@@ -388,13 +395,6 @@ def _create_procedure(name, **create_operation_kwargs):
       "name": "ignore_global_constraints",
       "default_value": False,
       "display_name": _("Ignore Global Constraints"),
-    },
-    {
-      "type": pg.SettingTypes.boolean,
-      "name": "more_options_enabled",
-      "default_value": False,
-      "display_name": _("_More Options"),
-      "gui_type": pg.SettingGuiTypes.expander,
     },
   ])
   

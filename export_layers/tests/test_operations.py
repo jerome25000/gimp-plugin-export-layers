@@ -124,7 +124,12 @@ class TestCreateOperations(unittest.TestCase):
      test_procedures,
      "autocrop_background",
      ["operation", "procedure"],
-     {"operation_groups": [operations.DEFAULT_PROCEDURES_GROUP]}),
+     {
+       "operation_groups": [operations.DEFAULT_PROCEDURES_GROUP],
+       "more_options_visible": False,
+       "local_constraints": "",
+       "ignore_global_constraints": False,
+     }),
     
     ("procedure_with_custom_group",
      "procedures",

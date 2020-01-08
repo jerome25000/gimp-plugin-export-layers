@@ -407,7 +407,7 @@ class OperationBox(pg.gui.ItemBox):
     operation["arguments"].apply_gui_values_to_settings()
     
     if "procedure" in operation.tags:
-      operation["local_constraint"].gui.update_setting_value()
+      operation["local_constraints"].gui.update_setting_value()
   
   def _get_operation_edit_dialog_title(self, item):
     if self._edit_operation_text is not None:
@@ -525,7 +525,7 @@ class _OperationEditDialog(gimpui.Dialog):
       self._hbox_apply_to.set_spacing(self._HBOX_APPLY_TO_SPACING)
       self._hbox_apply_to.pack_start(self._label_apply_to, expand=False, fill=False)
       self._hbox_apply_to.pack_start(
-        operation["local_constraint"].gui.element, expand=False, fill=False)
+        operation["local_constraints"].gui.element, expand=False, fill=False)
       
       self._vbox_apply_to = gtk.VBox()
       self._vbox_apply_to.set_spacing(self._VBOX_APPLY_TO_SPACING)
@@ -534,10 +534,10 @@ class _OperationEditDialog(gimpui.Dialog):
       self._vbox_apply_to.pack_start(
         operation["ignore_global_constraints"].gui.element, expand=False, fill=False)
       
-      operation["more_options_enabled"].gui.element.add(self._vbox_apply_to)
+      operation["more_options_visible"].gui.element.add(self._vbox_apply_to)
       
       self._vbox.pack_start(
-        operation["more_options_enabled"].gui.element, expand=False, fill=False)
+        operation["more_options_visible"].gui.element, expand=False, fill=False)
   
   def _set_arguments(self, operation, pdb_procedure):
     for i, setting in enumerate(operation["arguments"]):
@@ -580,10 +580,10 @@ class _OperationEditDialog(gimpui.Dialog):
       self._table_operation_arguments.remove(child)
     
     if "procedure" in operation.tags:
-      self._hbox_apply_to.remove(operation["local_constraint"].gui.element)
+      self._hbox_apply_to.remove(operation["local_constraints"].gui.element)
       self._vbox_apply_to.remove(operation["ignore_global_constraints"].gui.element)
-      operation["more_options_enabled"].gui.element.remove(self._vbox_apply_to)
-      self._vbox.remove(operation["more_options_enabled"].gui.element)
+      operation["more_options_visible"].gui.element.remove(self._vbox_apply_to)
+      self._vbox.remove(operation["more_options_visible"].gui.element)
   
   def _create_placeholder_widget(self):
     hbox = gtk.HBox()
