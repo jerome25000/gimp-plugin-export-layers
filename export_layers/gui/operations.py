@@ -405,9 +405,6 @@ class OperationBox(pg.gui.ItemBox):
   
   def _update_operation_values(self, operation):
     operation["arguments"].apply_gui_values_to_settings()
-    
-    if "procedure" in operation.tags:
-      operation["local_constraints"].gui.update_setting_value()
   
   def _get_operation_edit_dialog_title(self, item):
     if self._edit_operation_text is not None:

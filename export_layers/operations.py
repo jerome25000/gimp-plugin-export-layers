@@ -385,11 +385,7 @@ def _create_procedure(name, **create_operation_kwargs):
       "display_name": _("_More Options"),
       "gui_type": pg.SettingGuiTypes.expander,
     },
-    {
-      "type": pg.SettingTypes.string,
-      "name": "local_constraints",
-      "default_value": "",
-    },
+    create("local_constraints"),
     {
       "type": pg.SettingTypes.boolean,
       "name": "ignore_global_constraints",

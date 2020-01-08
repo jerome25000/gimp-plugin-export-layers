@@ -127,7 +127,6 @@ class TestCreateOperations(unittest.TestCase):
      {
        "operation_groups": [operations.DEFAULT_PROCEDURES_GROUP],
        "more_options_visible": False,
-       "local_constraints": "",
        "ignore_global_constraints": False,
      }),
     
@@ -858,3 +857,114 @@ class TestGetOperationDictAsPdbProcedure(unittest.TestCase):
       operation_dict["arguments"][-2]["type"], placeholders.PlaceholderImageSetting)
     self.assertEqual(
       operation_dict["arguments"][-1]["type"], placeholders.PlaceholderLayerSetting)
+
+
+class TestLocalConstraintsInProcedures(unittest.TestCase):
+  
+  def setUp(self):
+    self.procedures = operations.create("procedures", test_procedures)
+  
+  def test_create_procedure_contains_local_constraints(self):
+    for procedure_dict in get_operation_data(test_procedures):
+      self.assertIn("local_constraints", self.procedures["added"][procedure_dict])
+  
+  def test_add_local_constraint_to_procedure(self):
+    local_constraints = self.procedures["added/autocrop/local_constraints"]
+    
+    constraint = operations.add(local_constraints, test_constraints[1])
+    
+    self.assertIn("only_visible_layers", local_constraints["added"])
+    self.assertEqual(len(local_constraints["added"]), 1)
+    self.assertEqual(constraint, local_constraints["added/only_visible_layers"])
+  
+  @parameterized.parameterized.expand([
+    ("all_types_entire_operations",
+     None,
+     None,
+     ["autocrop",
+      "autocrop_background",
+      "autocrop_foreground"]),
+    
+    ("procedures_only_entire_operations",
+     "procedure",
+     None,
+     ["autocrop",
+      "autocrop_background",
+      "autocrop_foreground"]),
+    
+    ("all_types_specific_setting",
+     None,
+     "enabled",
+     ["autocrop/enabled",
+      "autocrop_background/enabled",
+      "autocrop_foreground/enabled"]),
+    
+    ("procedures_only_specific_setting",
+     "procedure",
+     "enabled",
+     ["autocrop/enabled",
+      "autocrop_background/enabled",
+      "autocrop_foreground/enabled"]),
+    
+    ("nonexistent_setting",
+     None,
+     "nonexistent_setting",
+     []),
+  ])
+  def test_walk_ignores_local_constraints(
+        self,
+        test_case_name_suffix,
+        operation_type,
+        setting_name,
+        expected_setting_paths):
+    local_constraints = self.procedures["added/autocrop/local_constraints"]
+    
+    operations.add(local_constraints, test_constraints[0])
+    operations.add(local_constraints, test_constraints[1])
+    
+    self.assertListEqual(
+      list(operations.walk(self.procedures, operation_type, setting_name)),
+      [self.procedures["added/" + path] for path in expected_setting_paths])
+  
+  def test_clear_also_clears_local_constraints(self):
+    operations.add(self.procedures["added/autocrop/local_constraints"], test_constraints[0])
+    operations.add(self.procedures["added/autocrop/local_constraints"], test_constraints[1])
+    
+    operations.clear(self.procedures)
+    
+    self.assertEqual(len(self.procedures["added/autocrop/local_constraints/added"]), 0)
+  
+  @mock.patch(
+    pg.PYGIMPLIB_MODULE_PATH + ".setting.sources.gimpshelf.shelf",
+    new=stubs_gimp.ShelfStub())
+  @mock.patch(
+    pg.PYGIMPLIB_MODULE_PATH + ".setting.sources.gimp",
+    new=stubs_gimp.GimpModuleStub())
+  def test_save_then_clear_then_load_properly_restores_local_constraints(self):
+    operations.add(self.procedures["added/autocrop/local_constraints"], test_constraints[0])
+    operations.add(self.procedures["added/autocrop/local_constraints"], test_constraints[1])
+    
+    self.procedures[
+      "added/autocrop/local_constraints/added/only_layers/enabled"].set_value(False)
+    self.procedures[
+      "added/autocrop/local_constraints/added/only_visible_layers/enabled"].set_value(True)
+    
+    self.procedures.save()
+    operations.clear(self.procedures)
+    self.procedures.load()
+    
+    self.assertListEqual(
+      list(operations.walk(self.procedures["added/autocrop/local_constraints"])),
+      [self.procedures["added/autocrop/local_constraints/added/" + path]
+       for path in ["only_layers", "only_visible_layers"]])
+    self.assertListEqual(
+      list(operations.walk(self.procedures["added/autocrop_background/local_constraints"])), [])
+    self.assertListEqual(
+      list(operations.walk(self.procedures["added/autocrop_foreground/local_constraints"])), [])
+    
+    self.assertEqual(
+      self.procedures["added/autocrop/local_constraints/added/only_layers/enabled"].value,
+      False)
+    self.assertEqual(
+      self.procedures["added/autocrop/local_constraints/added/only_visible_layers/enabled"].value,
+      True)
